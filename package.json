@@ -1,6 +1,6 @@
 {
   "name": "hh-toolkit-utils",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A comprehensive collection of React hooks, utility functions, and helpers for modern React development",
   "license": "MIT",
   "type": "module",
