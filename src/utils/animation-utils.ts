@@ -24,7 +24,7 @@ interface AnimationProps {
 
 /**
  * Universal animation props generator
- * CSS must be imported once: import '@nc/toolkit/animations.css'
+ * CSS must be imported once: import 'hh-toolkit/animations.css'
  */
 export function animate({ type, order = 0, delay, className = '', style = {} }: AnimationProps) {
   const baseClass = 'animate';

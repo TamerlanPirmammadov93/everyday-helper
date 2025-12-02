@@ -1,5 +1,5 @@
 {
-  "name": "@nc/toolkit-utils",
+  "name": "hh-toolkit-utils",
   "publishConfig": {
     "access": "public"
   },
