@@ -2,7 +2,7 @@ import { defineConfig } from 'tsup';
 
 export default defineConfig({
   entry: [
-    'src/index.ts',
+    './src/index.ts',
     // 'src/lib/index.ts',
     // 'src/utils/index.ts',
     // 'src/hooks/index.ts',
@@ -24,18 +24,10 @@ export default defineConfig({
   minify: false, // keep readable for internal use
   outDir: 'dist',
   splitting: false,
-  bundle: false,
   keepNames: true,
-  skipNodeModulesBundle: true,
   treeshake: true,
   external: ['react', 'react-dom', 'react-router-dom', 'dayjs'],
   onSuccess: 'copyfiles -u 1 "src/styles/**/*.css" dist',
   ignoreWatch: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', 'src/__tests__'],
   target: 'es2020',
-  banner: {
-    js: '"use client";',
-  },
-  footer: {
-    js: 'if (typeof module !== "undefined") module.exports = exports.default || exports;',
-  },
 });
