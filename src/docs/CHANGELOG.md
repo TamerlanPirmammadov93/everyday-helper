@@ -6,7 +6,7 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ## [Unreleased]
 
-## [1.0.13] - 2025-12-03
+## [1.0.14] - 2025-12-03
 
 ### Added
 - publish.yml file for automatic deploy
