@@ -6,6 +6,16 @@ and this project adheres to [Conventional Commits](https://www.conventionalcommi
 
 ## [Unreleased]
 
+## [1.0.18] - 2025-12-03
+
+### Added
+- test for automatic changelog.md changes
+
+## [1.0.17] - 2025-12-03
+
+### Added
+- test for automatic changelog.md changes
+
 ## [1.0.16] - 2025-12-03
 
 ### Added
