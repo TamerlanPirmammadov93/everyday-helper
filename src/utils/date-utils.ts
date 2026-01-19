@@ -39,7 +39,7 @@ export const formatDate = (
   };
 
   return Object.entries(tokens).reduce(
-    (acc, [token, value]) => acc.replaceAll(token, value),
+    (acc, [token, value]) => acc.replace(new RegExp(token, 'g'), value),
     format,
   );
 };
