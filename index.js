@@ -306,485 +306,9 @@ var lazyLoad = (componentMap, options = {}) => {
   return lazyComponents;
 };
 
-// src/lib/advanced-search.ts
-var SearchMode = /* @__PURE__ */ ((SearchMode2) => {
-  SearchMode2["DEEP"] = "deep";
-  SearchMode2["LIGHT"] = "light";
-  SearchMode2["NORMAL"] = "normal";
-  return SearchMode2;
-})(SearchMode || {});
-
-// src/hooks/usePrint.ts
-import { useCallback } from "react";
-var DEFAULT_STYLE = {
-  padding: "20px",
-  fit: "contain",
-  maxWidth: "100%",
-  maxHeight: "100%",
-  background: "#fff"
-};
-var DEFAULT_CONFIG = {
-  ...DEFAULT_STYLE,
-  printDelay: 150,
-  cleanupDelay: 1e4
-};
-var usePrint = () => {
-  const createPrintHTML = (src, style = {}) => {
-    const { padding, fit, maxWidth, maxHeight, background } = { ...DEFAULT_STYLE, ...style };
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            html, body {
-              width: 100%;
-              height: 100%;
-              background: ${background};
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              padding: ${padding};
-            }
-            img {
-              max-width: ${maxWidth};
-              max-height: ${maxHeight};
-              object-fit: ${fit};
-            }
-            @media print { body { padding: 0; } }
-          </style>
-        </head>
-        <body>
-          <img src="${src}" alt="Print document">
-        </body>
-      </html>
-    `;
-  };
-  const printInBlank = useCallback((src, style = {}) => {
-    const windowRef = window.open("", "_blank", "width=800,height=600");
-    if (!windowRef) {
-      return alert("P\u0259nc\u0259r\u0259 bloklan\u0131b. \xC7ap \xFC\xE7\xFCn pop-uplara icaz\u0259 verin.");
-    }
-    const html = createPrintHTML(src, style);
-    const { printDelay = DEFAULT_CONFIG.printDelay } = style;
-    windowRef.document.write(html);
-    windowRef.document.close();
-    windowRef.document.querySelector("img")?.addEventListener("load", () => {
-      setTimeout(() => {
-        windowRef.print();
-        windowRef.close();
-      }, printDelay);
-    });
-  }, []);
-  const printInCurrent = useCallback((src, style = {}) => {
-    const iframe = document.createElement("iframe");
-    Object.assign(iframe.style, {
-      position: "fixed",
-      right: "0",
-      bottom: "0",
-      width: "0",
-      height: "0",
-      border: "0",
-      opacity: "0",
-      pointerEvents: "none"
-    });
-    document.body.appendChild(iframe);
-    const html = createPrintHTML(src, style);
-    const { printDelay = DEFAULT_CONFIG.printDelay, cleanupDelay = DEFAULT_CONFIG.cleanupDelay } = style;
-    const iframeDoc = iframe.contentDocument;
-    iframeDoc.open();
-    iframeDoc.write(html);
-    iframeDoc.close();
-    const cleanup = () => {
-      iframe.contentWindow?.removeEventListener("afterprint", cleanup);
-      iframe.remove();
-    };
-    iframe.contentWindow?.addEventListener("afterprint", cleanup);
-    iframe.contentWindow?.addEventListener("load", () => {
-      setTimeout(() => {
-        iframe.contentWindow?.print();
-      }, printDelay);
-    });
-    setTimeout(cleanup, cleanupDelay);
-  }, []);
-  return { printInBlank, printInCurrent };
-};
-
-// src/hooks/useMount.ts
-import { useEffect } from "react";
-function useMount(effect) {
-  useEffect(() => {
-    return effect();
-  }, []);
-}
-
-// src/hooks/usePortal.ts
-import { useEffect as useEffect2, useRef } from "react";
-var usePortal = ({ id } = {}) => {
-  const rootRef = useRef(null);
-  useEffect2(() => {
-    let parentElement = null;
-    if (id) {
-      parentElement = document.getElementById(id);
-    }
-    const container = document.createElement("div");
-    rootRef.current = container;
-    if (parentElement) {
-      parentElement.appendChild(container);
-    } else {
-      document.body.appendChild(container);
-    }
-    return () => {
-      container.remove();
-    };
-  }, [id]);
-  return rootRef;
-};
-
-// src/hooks/useToggle.ts
-import { useState } from "react";
-var useToggle = () => {
-  const [isActive, setIsActive] = useState(false);
-  const toggle = () => setIsActive((prev) => !prev);
-  const onClose = () => setIsActive(false);
-  const onOpen = () => setIsActive(true);
-  return { isActive, onClose, onOpen, toggle };
-};
-
-// src/hooks/useUnmount.ts
-import { useEffect as useEffect3, useRef as useRef2 } from "react";
-function useUnmount(fn) {
-  const fnRef = useRef2(fn);
-  fnRef.current = fn;
-  useEffect3(
-    () => () => {
-      fnRef.current();
-    },
-    []
-  );
-}
-
-// src/hooks/useDebounce.ts
-import { useEffect as useEffect4, useState as useState2 } from "react";
-function useDebounce(value, delay2 = 500) {
-  const [debouncedValue, setDebouncedValue] = useState2(value);
-  useEffect4(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay2);
-    return () => clearTimeout(timer);
-  }, [value, delay2]);
-  return debouncedValue;
-}
-
-// src/hooks/usePrevious.ts
-import { useEffect as useEffect5, useRef as useRef3 } from "react";
-function usePrevious(value) {
-  const ref = useRef3(void 0);
-  useEffect5(() => {
-    ref.current = value;
-  }, [value]);
-  return ref.current;
-}
-
-// src/hooks/useInterval.ts
-import { useEffect as useEffect6, useRef as useRef4 } from "react";
-function useInterval(callback, delay2) {
-  const savedCallback = useRef4(callback);
-  useEffect6(() => {
-    savedCallback.current = callback;
-  }, [callback]);
-  useEffect6(() => {
-    if (delay2 === null) {
-      return;
-    }
-    const id = setInterval(() => savedCallback.current(), delay2);
-    return () => clearInterval(id);
-  }, [delay2]);
-}
-
-// src/hooks/useEscapeKey.ts
-import { useCallback as useCallback2 } from "react";
-
-// src/constants/EventTypes.ts
-var EventTypes = /* @__PURE__ */ ((EventTypes2) => {
-  EventTypes2["IDLE"] = "idle";
-  EventTypes2["CLICK"] = "click";
-  EventTypes2["MOUSE_UP"] = "mouseup";
-  EventTypes2["DBLCLICK"] = "dblclick";
-  EventTypes2["MOUSE_OUT"] = "mouseout";
-  EventTypes2["MOUSE_DOWN"] = "mousedown";
-  EventTypes2["MOUSE_MOVE"] = "mousemove";
-  EventTypes2["MOUSE_OVER"] = "mouseover";
-  EventTypes2["MOUSE_ENTER"] = "mouseenter";
-  EventTypes2["MOUSE_LEAVE"] = "mouseleave";
-  EventTypes2["CONTEXT_MENU"] = "contextmenu";
-  EventTypes2["KEY_UP"] = "keyup";
-  EventTypes2["ESCAPE"] = "Escape";
-  EventTypes2["KEY_DOWN"] = "keydown";
-  EventTypes2["KEY_PRESS"] = "keypress";
-  EventTypes2["ARROW_LEFT"] = "ArrowLeft";
-  EventTypes2["ARROW_RIGHT"] = "ArrowRight";
-  EventTypes2["BLUR"] = "blur";
-  EventTypes2["INPUT"] = "input";
-  EventTypes2["RESET"] = "reset";
-  EventTypes2["FOCUS"] = "focus";
-  EventTypes2["CHANGE"] = "change";
-  EventTypes2["SUBMIT"] = "submit";
-  EventTypes2["TOUCH_END"] = "touchend";
-  EventTypes2["TOUCH_MOVE"] = "touchmove";
-  EventTypes2["TOUCH_START"] = "touchstart";
-  EventTypes2["TOUCH_CANCEL"] = "touchcancel";
-  EventTypes2["POINTER_UP"] = "pointerup";
-  EventTypes2["POINTER_OUT"] = "pointerout";
-  EventTypes2["POINTER_DOWN"] = "pointerdown";
-  EventTypes2["POINTER_MOVE"] = "pointermove";
-  EventTypes2["POINTER_OVER"] = "pointerover";
-  EventTypes2["POINTER_ENTER"] = "pointerenter";
-  EventTypes2["POINTER_LEAVE"] = "pointerleave";
-  EventTypes2["POINTER_CANCEL"] = "pointercancel";
-  EventTypes2["DRAG"] = "drag";
-  EventTypes2["DROP"] = "drop";
-  EventTypes2["DRAG_END"] = "dragend";
-  EventTypes2["DRAG_OVER"] = "dragover";
-  EventTypes2["DRAG_START"] = "dragstart";
-  EventTypes2["DRAG_ENTER"] = "dragenter";
-  EventTypes2["DRAG_LEAVE"] = "dragleave";
-  EventTypes2["CUT"] = "cut";
-  EventTypes2["COPY"] = "copy";
-  EventTypes2["PASTE"] = "paste";
-  EventTypes2["PLAY"] = "play";
-  EventTypes2["PAUSE"] = "pause";
-  EventTypes2["ENDED"] = "ended";
-  EventTypes2["TIME_UPDATE"] = "timeupdate";
-  EventTypes2["VOLUME_CHANGE"] = "volumechange";
-  EventTypes2["LOADED_METADATA"] = "loadedmetadata";
-  EventTypes2["FOCUS_IN"] = "focusin";
-  EventTypes2["FOCUS_OUT"] = "focusout";
-  EventTypes2["VISIBILITY_CHANGE"] = "visibilitychange";
-  EventTypes2["WHEEL"] = "wheel";
-  EventTypes2["SCROLL"] = "scroll";
-  EventTypes2["LOAD"] = "load";
-  EventTypes2["ERROR"] = "error";
-  EventTypes2["RESIZE"] = "resize";
-  EventTypes2["UNLOAD"] = "unload";
-  EventTypes2["ONLINE"] = "online";
-  EventTypes2["OFFLINE"] = "offline";
-  EventTypes2["BEFORE_UNLOAD"] = "beforeunload";
-  return EventTypes2;
-})(EventTypes || {});
-var EventTypes_default = EventTypes;
-
-// src/hooks/useEventListener.ts
-import { useEffect as useEffect7 } from "react";
-function useEventListener(event, handler, element = window) {
-  useEffect7(() => {
-    element.addEventListener(event, handler);
-    return () => element.removeEventListener(event, handler);
-  }, [event, handler, element]);
-}
-
-// src/hooks/useEscapeKey.ts
-var useEscapeKey = ({
-  onEscape,
-  enabled = true,
-  preventDefault = false
-}) => {
-  const handler = useCallback2(
-    (event) => {
-      if (!enabled) return;
-      if (event.key === EventTypes_default.ESCAPE) {
-        if (preventDefault) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
-        onEscape();
-      }
-    },
-    [enabled, onEscape, preventDefault]
-  );
-  useEventListener("keydown", handler, document);
-};
-
-// src/hooks/useScrollLock.ts
-import { useEffect as useEffect8 } from "react";
-var useScrollLock = ({ isLocked }) => {
-  useEffect8(() => {
-    if (isLocked) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isLocked]);
-};
-
-// src/hooks/useMediaQuery.ts
-import { useState as useState3, useEffect as useEffect9 } from "react";
-
 // src/utils/browser.ts
 var isBrowser = () => typeof window !== "undefined";
 var safeWindow = () => isBrowser() ? window : void 0;
-
-// src/hooks/useMediaQuery.ts
-function useMediaQuery(query, defaultValue = false) {
-  const [matches, setMatches] = useState3(() => {
-    if (isBrowser()) {
-      return defaultValue;
-    }
-    return window.matchMedia(query).matches;
-  });
-  useEffect9(() => {
-    if (isBrowser()) {
-      return;
-    }
-    const mediaQuery = window.matchMedia(query);
-    setMatches(mediaQuery.matches);
-    const handleChange = (event) => {
-      setMatches(event.matches);
-    };
-    mediaQuery.addEventListener("change", handleChange);
-    return () => {
-      mediaQuery.removeEventListener("change", handleChange);
-    };
-  }, [query]);
-  return matches;
-}
-
-// src/hooks/useWindowSize.ts
-import { useState as useState4, useEffect as useEffect10 } from "react";
-function useWindowSize() {
-  const [windowSize, setWindowSize] = useState4({
-    width: isBrowser() ? window.innerWidth : 0,
-    height: isBrowser() ? window.innerHeight : 0
-  });
-  useEffect10(() => {
-    if (isBrowser()) return;
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight
-      });
-    };
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-  return windowSize;
-}
-
-// src/hooks/useDownloadFile.ts
-var useDownloadFile = ({
-  errorMessage = "Endirm\u0259 u\u011Fursuz oldu."
-}) => {
-  const downloadImage = async (src, filename) => {
-    try {
-      const response = await fetch(src);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${filename.replace(/\s+/g, "_")}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch {
-      alert(errorMessage);
-    }
-  };
-  return { downloadImage };
-};
-
-// src/hooks/useOnlineStatus.ts
-import { useSyncExternalStore } from "react";
-function useOnlineStatus() {
-  const isOnline = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getServerSnapshot
-  );
-  return isOnline;
-}
-function getSnapshot() {
-  return navigator.onLine;
-}
-function getServerSnapshot() {
-  return true;
-}
-function subscribe(callback) {
-  window.addEventListener("online", callback);
-  window.addEventListener("offline", callback);
-  return () => {
-    window.removeEventListener("online", callback);
-    window.removeEventListener("offline", callback);
-  };
-}
-
-// src/hooks/useOutsideClick.ts
-import { useCallback as useCallback3 } from "react";
-function useOutsideClick(ref, onClickOutside) {
-  const handler = useCallback3(
-    (event) => {
-      if (!ref.current) return;
-      if (!ref.current.contains(event.target)) {
-        onClickOutside?.();
-      }
-    },
-    [ref, onClickOutside]
-  );
-  useEventListener("mousedown", handler, document);
-}
-
-// src/hooks/useBeforeUnload.ts
-import { useEffect as useEffect11 } from "react";
-
-// src/hooks/useUpdateEffect.ts
-import { useEffect as useEffect12, useRef as useRef5 } from "react";
-function useUpdateEffect(effect, deps) {
-  const isFirstRender = useRef5(true);
-  useEffect12(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    return effect();
-  }, deps);
-}
-
-// src/hooks/useResizeListener.ts
-import { useEffect as useEffect13 } from "react";
-var useResizeListener = (callback, active) => {
-  useEffect13(() => {
-    if (active) {
-      callback();
-      window.addEventListener(EventTypes_default.RESIZE, callback);
-    }
-    return () => {
-      window.removeEventListener(EventTypes_default.RESIZE, callback);
-    };
-  }, [active, callback]);
-};
-
-// src/hooks/useCopyToClipboard.ts
-import { useState as useState5 } from "react";
-
-// src/hooks/useKeyPress.ts
-import { useCallback as useCallback4, useState as useState6 } from "react";
-function useKeyPress(targetKey) {
-  const [pressed, setPressed] = useState6(false);
-  const downHandler = useCallback4((e) => {
-    if (e.key === targetKey) setPressed(true);
-  }, [targetKey]);
-  const upHandler = useCallback4((e) => {
-    if (e.key === targetKey) setPressed(false);
-  }, [targetKey]);
-  useEventListener("keydown", downHandler);
-  useEventListener("keyup", upHandler);
-  return pressed;
-}
 
 // src/utils/common-utils.ts
 function isNulOrUndefined(v) {
@@ -849,6 +373,25 @@ var DateFormats = /* @__PURE__ */ ((DateFormats2) => {
   return DateFormats2;
 })(DateFormats || {});
 
+// src/constants/DateLangLabels.ts
+var DateLangLabels = {
+  AZ: {
+    year: "il",
+    month: "ay",
+    day: "g\xFCn"
+  },
+  EN: {
+    year: { one: "year", other: "years" },
+    month: { one: "month", other: "months" },
+    day: { one: "day", other: "days" }
+  },
+  RU: {
+    year: { one: "\u0433\u043E\u0434", few: "\u0433\u043E\u0434\u0430", many: "\u043B\u0435\u0442" },
+    month: { one: "\u043C\u0435\u0441\u044F\u0446", few: "\u043C\u0435\u0441\u044F\u0446\u0430", many: "\u043C\u0435\u0441\u044F\u0446\u0435\u0432" },
+    day: { one: "\u0434\u0435\u043D\u044C", few: "\u0434\u043D\u044F", many: "\u0434\u043D\u0435\u0439" }
+  }
+};
+
 // src/utils/date-utils.ts
 var toDate = (date) => {
   if (!date) return void 0;
@@ -856,6 +399,69 @@ var toDate = (date) => {
   return isNaN(d.getTime()) ? void 0 : d;
 };
 var pad = (n) => String(n).padStart(2, "0");
+var computeAnchor = ({ totalMonths, startDate }) => {
+  const anchorYear = startDate.getUTCFullYear() + Math.floor((startDate.getUTCMonth() + totalMonths) / 12);
+  const anchorMonth = (startDate.getUTCMonth() + totalMonths) % 12;
+  const daysInMonth = new Date(Date.UTC(anchorYear, anchorMonth + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(anchorYear, anchorMonth, Math.min(startDate.getUTCDate(), daysInMonth)));
+};
+var generateOrderedDateText = ({ order, lang, date }) => {
+  let ordered = [];
+  const { years, days, months } = date;
+  const labels = getLabels(lang, years, months, days);
+  const yearPart = years > 0 ? `${years} ${labels.year}` : null;
+  const monthPart = months > 0 ? `${months} ${labels.month}` : null;
+  const dayPart = days > 0 || !yearPart && !monthPart ? `${days} ${labels.day}` : null;
+  switch (order) {
+    case "YMD":
+      ordered = [yearPart, monthPart, dayPart];
+      break;
+    case "DMY":
+      ordered = [dayPart, monthPart, yearPart];
+      break;
+    case "MDY":
+      ordered = [monthPart, dayPart, yearPart];
+      break;
+  }
+  return ordered.filter(Boolean).join(" ");
+};
+var pluralRulesCache = /* @__PURE__ */ new Map();
+var pluralize = (lang, n, label) => {
+  let rules = pluralRulesCache.get(lang);
+  if (!rules) {
+    rules = new Intl.PluralRules(lang);
+    pluralRulesCache.set(lang, rules);
+  }
+  const category = rules.select(n);
+  return label[category] ?? label.one;
+};
+var getLabels = (lang, years, months, days) => {
+  switch (lang) {
+    case "az": {
+      const azLabel = DateLangLabels.AZ;
+      return { year: azLabel.year, month: azLabel.month, day: azLabel.day };
+    }
+    case "en": {
+      const enLabel = DateLangLabels.EN;
+      return {
+        day: pluralize(lang, days, enLabel.day),
+        year: pluralize(lang, years, enLabel.year),
+        month: pluralize(lang, months, enLabel.month)
+      };
+    }
+    case "ru": {
+      const ruLabel = DateLangLabels.RU;
+      return {
+        day: pluralize(lang, days, ruLabel.day),
+        year: pluralize(lang, years, ruLabel.year),
+        month: pluralize(lang, months, ruLabel.month)
+      };
+    }
+    default: {
+      throw new Error(`Unsupported lang: ${lang}`);
+    }
+  }
+};
 var formatDate = (date, format = "DD MMM YYYY" /* DD_MMM_YYYY_WITH_SPACE */) => {
   const d = toDate(date);
   if (!d) return void 0;
@@ -1029,6 +635,50 @@ var compareDates = (date1, date2) => {
   if (d1.getTime() > d2.getTime()) return 1;
   return 0;
 };
+function getDaysDiffAsText({
+  options,
+  endDate,
+  startDate
+}) {
+  const { asText = true, lang = "az", order = "YMD" } = options ?? {};
+  const startParsed = toDate(startDate);
+  const endParsed = toDate(endDate);
+  if (!startParsed || !endParsed) {
+    throw new Error("Invalid date provided");
+  }
+  const start = new Date(Date.UTC(startParsed.getUTCFullYear(), startParsed.getUTCMonth(), startParsed.getUTCDate()));
+  const end = new Date(Date.UTC(endParsed.getUTCFullYear(), endParsed.getUTCMonth(), endParsed.getUTCDate()));
+  if (end < start) {
+    throw new Error("endDate must be greater than startDate");
+  }
+  const diffYears = end.getUTCFullYear() - start.getUTCFullYear();
+  const diffMonths = end.getUTCMonth() - start.getUTCMonth();
+  let totalMonths = diffYears * 12 + diffMonths;
+  let anchor = computeAnchor({ totalMonths, startDate: start });
+  if (anchor > end) {
+    totalMonths--;
+    anchor = computeAnchor({ totalMonths, startDate: start });
+  }
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+  const days = Math.floor((end.getTime() - anchor.getTime()) / (1e3 * 60 * 60 * 24));
+  if (asText) {
+    return generateOrderedDateText({
+      order,
+      lang,
+      date: {
+        days,
+        years,
+        months
+      }
+    });
+  }
+  return {
+    yearCount: years,
+    monthCount: months,
+    dayCount: days
+  };
+}
 
 // src/utils/phone-utils.ts
 var hasAzerbaijanCountryCode = (phoneNumber) => {
@@ -1501,6 +1151,25 @@ var slugify = (str) => {
 function getInitials(name, limit = 2) {
   return name.split(" ").map((w) => w[0]).join("").slice(0, limit).toUpperCase();
 }
+var normalizeAzText = (text) => {
+  const charMap = {
+    \u0259: "e",
+    \u018F: "E",
+    \u0131: "i",
+    \u0130: "I",
+    \u015F: "s",
+    \u015E: "S",
+    \u00E7: "c",
+    \u00C7: "C",
+    \u011F: "g",
+    \u011E: "G",
+    \u00FC: "u",
+    \u00DC: "U",
+    \u00F6: "o",
+    \u00D6: "O"
+  };
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[əıüşçğüöƏIŞÇĞÜÖ]/g, (match) => charMap[match] || match).toLowerCase();
+};
 
 // src/utils/convert-utils.ts
 var convertFileToBase64 = (file) => new Promise((resolve, reject2) => {
@@ -1731,6 +1400,727 @@ var slideInLeft = (order, className, style) => animate({ type: "slide-in-left", 
 var slideInRight = (order, className, style) => animate({ type: "slide-in-right", order, className, style });
 var scaleIn = (order, className, style) => animate({ type: "scale-in", order, className, style });
 var bounceIn = (order, className, style) => animate({ type: "bounce-in", order, className, style });
+
+// src/lib/advanced-search.ts
+var SearchMode = /* @__PURE__ */ ((SearchMode2) => {
+  SearchMode2["DEEP"] = "deep";
+  SearchMode2["LIGHT"] = "light";
+  SearchMode2["NORMAL"] = "normal";
+  return SearchMode2;
+})(SearchMode || {});
+var advancedSearch = (options, searchTerm, mode = "deep" /* DEEP */) => {
+  if (!searchTerm) return options;
+  const term = normalizeAzText(searchTerm);
+  switch (mode) {
+    case "light" /* LIGHT */:
+      return lightSearch(options, term);
+    case "normal" /* NORMAL */:
+      return normalSearch(options, term);
+    case "deep" /* DEEP */:
+    default:
+      return deepSearch(options, term);
+  }
+};
+var lightSearch = (options, searchTerm) => {
+  const filteredOptions = [];
+  for (const option of options) {
+    const normalizedLabel = normalizeAzText(option.label || "");
+    const parentMatches = normalizedLabel.includes(searchTerm);
+    let filteredChildren = [];
+    if (option.children?.length) {
+      filteredChildren = option.children.filter((child) => {
+        const normalizedChildLabel = normalizeAzText(child.label || "");
+        return normalizedChildLabel.includes(searchTerm);
+      });
+    }
+    if (parentMatches || filteredChildren.length > 0) {
+      filteredOptions.push({
+        ...option,
+        children: filteredChildren
+      });
+    }
+  }
+  return filteredOptions;
+};
+var normalSearch = (options, searchTerm) => {
+  const searchWords = searchTerm.split(" ").filter(Boolean);
+  const scoredOptions = [];
+  for (const option of options) {
+    const normalizedLabel = normalizeAzText(option.label || "");
+    let parentScore = 0;
+    for (const word of searchWords) {
+      if (normalizedLabel.includes(word)) {
+        parentScore += 15;
+      } else {
+        const wordsInLabel = normalizedLabel.split(" ");
+        const hasCloseMatch = wordsInLabel.some((labelWord) => {
+          const distance = levenshteinDistance(word, labelWord);
+          return distance <= Math.min(2, Math.floor(word.length / 3));
+        });
+        if (hasCloseMatch) {
+          parentScore += 5;
+        }
+      }
+    }
+    let filteredChildren = [];
+    if (option.children?.length) {
+      filteredChildren = option.children.map((child) => {
+        const normalizedChildLabel = normalizeAzText(child.label || "");
+        let childScore = 0;
+        for (const word of searchWords) {
+          if (normalizedChildLabel.includes(word)) {
+            childScore += 15;
+          } else {
+            const wordsInChildLabel = normalizedChildLabel.split(" ");
+            const hasCloseMatch = wordsInChildLabel.some((labelWord) => {
+              const distance = levenshteinDistance(word, labelWord);
+              return distance <= Math.min(2, Math.floor(word.length / 3));
+            });
+            if (hasCloseMatch) {
+              childScore += 5;
+            }
+          }
+        }
+        return childScore >= 8 ? { ...child, score: childScore } : null;
+      }).filter(Boolean);
+    }
+    if (parentScore >= 8 || filteredChildren.length > 0) {
+      scoredOptions.push({
+        option: { ...option, children: filteredChildren },
+        score: parentScore
+      });
+    }
+  }
+  return scoredOptions.sort((a, b) => b.score - a.score).map((item) => item.option);
+};
+var deepSearch = (options, searchTerm) => {
+  const searchWords = searchTerm.split(" ").filter(Boolean);
+  const scoredOptions = [];
+  for (const option of options) {
+    const normalizedLabel = normalizeAzText(option.label || "");
+    let parentScore = 0;
+    for (const word of searchWords) {
+      if (normalizedLabel.includes(word)) {
+        parentScore += 20;
+      } else {
+        const wordsInLabel = normalizedLabel.split(" ");
+        const minDistance = Math.min(
+          ...wordsInLabel.map((labelWord) => levenshteinDistance(word, labelWord))
+        );
+        if (minDistance <= Math.max(Math.floor(word.length / 2), 3)) {
+          parentScore += 10 / (minDistance + 1);
+        }
+      }
+    }
+    let filteredChildren = [];
+    if (option.children?.length) {
+      filteredChildren = option.children.map((child) => {
+        const normalizedChildLabel = normalizeAzText(child.label || "");
+        let childScore = 0;
+        for (const word of searchWords) {
+          if (normalizedChildLabel.includes(word)) {
+            childScore += 20;
+          } else {
+            const wordsInChildLabel = normalizedChildLabel.split(" ");
+            const minDistance = Math.min(
+              ...wordsInChildLabel.map((labelWord) => levenshteinDistance(word, labelWord))
+            );
+            if (minDistance <= Math.max(Math.floor(word.length / 2), 3)) {
+              childScore += 10 / (minDistance + 1);
+            }
+          }
+        }
+        return childScore >= 3 ? { ...child, score: childScore } : null;
+      }).filter(Boolean);
+    }
+    if (parentScore >= 3 || filteredChildren.length > 0) {
+      scoredOptions.push({
+        option: { ...option, children: filteredChildren },
+        score: parentScore
+      });
+    }
+  }
+  return scoredOptions.sort((a, b) => b.score - a.score).map((item) => item.option);
+};
+
+// src/lib/levenshtein-distance.ts
+var levenshteinDistance = (a, b) => {
+  const matrix = Array(b.length + 1).fill(0).map(() => Array(a.length + 1).fill(0));
+  for (let i = 0; i <= a.length; i++) matrix[0][i] = i;
+  for (let j = 0; j <= b.length; j++) matrix[j][0] = j;
+  for (let j = 1; j <= b.length; j++) {
+    for (let i = 1; i <= a.length; i++) {
+      const indicator = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[j][i] = Math.min(
+        matrix[j][i - 1] + 1,
+        matrix[j - 1][i] + 1,
+        matrix[j - 1][i - 1] + indicator
+      );
+    }
+  }
+  return matrix[b.length][a.length];
+};
+
+// src/hooks/usePrint.ts
+import { useCallback } from "react";
+var DEFAULT_STYLE = {
+  padding: "20px",
+  fit: "contain",
+  maxWidth: "100%",
+  maxHeight: "100%",
+  background: "#fff"
+};
+var DEFAULT_CONFIG = {
+  ...DEFAULT_STYLE,
+  printDelay: 150,
+  cleanupDelay: 1e4
+};
+var usePrint = () => {
+  const createPrintHTML = (src, style = {}) => {
+    const { padding, fit, maxWidth, maxHeight, background } = { ...DEFAULT_STYLE, ...style };
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            html, body {
+              width: 100%;
+              height: 100%;
+              background: ${background};
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: ${padding};
+            }
+            img {
+              max-width: ${maxWidth};
+              max-height: ${maxHeight};
+              object-fit: ${fit};
+            }
+            @media print { body { padding: 0; } }
+          </style>
+        </head>
+        <body>
+          <img src="${src}" alt="Print document">
+        </body>
+      </html>
+    `;
+  };
+  const printInBlank = useCallback((src, style = {}) => {
+    const windowRef = window.open("", "_blank", "width=800,height=600");
+    if (!windowRef) {
+      return alert("P\u0259nc\u0259r\u0259 bloklan\u0131b. \xC7ap \xFC\xE7\xFCn pop-uplara icaz\u0259 verin.");
+    }
+    const html = createPrintHTML(src, style);
+    const { printDelay = DEFAULT_CONFIG.printDelay } = style;
+    windowRef.document.write(html);
+    windowRef.document.close();
+    windowRef.document.querySelector("img")?.addEventListener("load", () => {
+      setTimeout(() => {
+        windowRef.print();
+        windowRef.close();
+      }, printDelay);
+    });
+  }, []);
+  const printInCurrent = useCallback((src, style = {}) => {
+    const iframe = document.createElement("iframe");
+    Object.assign(iframe.style, {
+      position: "fixed",
+      right: "0",
+      bottom: "0",
+      width: "0",
+      height: "0",
+      border: "0",
+      opacity: "0",
+      pointerEvents: "none"
+    });
+    document.body.appendChild(iframe);
+    const html = createPrintHTML(src, style);
+    const { printDelay = DEFAULT_CONFIG.printDelay, cleanupDelay = DEFAULT_CONFIG.cleanupDelay } = style;
+    const iframeDoc = iframe.contentDocument;
+    iframeDoc.open();
+    iframeDoc.write(html);
+    iframeDoc.close();
+    const cleanup = () => {
+      iframe.contentWindow?.removeEventListener("afterprint", cleanup);
+      iframe.remove();
+    };
+    iframe.contentWindow?.addEventListener("afterprint", cleanup);
+    iframe.contentWindow?.addEventListener("load", () => {
+      setTimeout(() => {
+        iframe.contentWindow?.print();
+      }, printDelay);
+    });
+    setTimeout(cleanup, cleanupDelay);
+  }, []);
+  return { printInBlank, printInCurrent };
+};
+
+// src/hooks/useMount.ts
+import { useEffect } from "react";
+function useMount(effect) {
+  useEffect(() => {
+    return effect();
+  }, []);
+}
+
+// src/hooks/usePortal.ts
+import { useEffect as useEffect2, useRef } from "react";
+var usePortal = ({ id } = {}) => {
+  const rootRef = useRef(null);
+  useEffect2(() => {
+    let parentElement = null;
+    if (id) {
+      parentElement = document.getElementById(id);
+    }
+    const container = document.createElement("div");
+    rootRef.current = container;
+    if (parentElement) {
+      parentElement.appendChild(container);
+    } else {
+      document.body.appendChild(container);
+    }
+    return () => {
+      container.remove();
+    };
+  }, [id]);
+  return rootRef;
+};
+
+// src/hooks/useToggle.ts
+import { useState } from "react";
+var useToggle = () => {
+  const [isActive, setIsActive] = useState(false);
+  const toggle = () => setIsActive((prev) => !prev);
+  const onClose = () => setIsActive(false);
+  const onOpen = () => setIsActive(true);
+  return { isActive, onClose, onOpen, toggle };
+};
+
+// src/hooks/useUnmount.ts
+import { useEffect as useEffect3, useRef as useRef2 } from "react";
+function useUnmount(fn) {
+  const fnRef = useRef2(fn);
+  fnRef.current = fn;
+  useEffect3(
+    () => () => {
+      fnRef.current();
+    },
+    []
+  );
+}
+
+// src/hooks/useDebounce.ts
+import { useEffect as useEffect4, useState as useState2 } from "react";
+function useDebounce(value, delay2 = 500) {
+  const [debouncedValue, setDebouncedValue] = useState2(value);
+  useEffect4(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay2);
+    return () => clearTimeout(timer);
+  }, [value, delay2]);
+  return debouncedValue;
+}
+
+// src/hooks/usePrevious.ts
+import { useEffect as useEffect5, useRef as useRef3 } from "react";
+function usePrevious(value) {
+  const ref = useRef3(void 0);
+  useEffect5(() => {
+    ref.current = value;
+  }, [value]);
+  return ref.current;
+}
+
+// src/hooks/useInterval.ts
+import { useEffect as useEffect6, useRef as useRef4 } from "react";
+function useInterval(callback, delay2) {
+  const savedCallback = useRef4(callback);
+  useEffect6(() => {
+    savedCallback.current = callback;
+  }, [callback]);
+  useEffect6(() => {
+    if (delay2 === null) {
+      return;
+    }
+    const id = setInterval(() => savedCallback.current(), delay2);
+    return () => clearInterval(id);
+  }, [delay2]);
+}
+
+// src/hooks/useThrottle.ts
+import { useCallback as useCallback2, useEffect as useEffect7, useMemo, useRef as useRef5, useState as useState3 } from "react";
+function useThrottle(value, delay2 = 500) {
+  const [throttledValue, setThrottledValue] = useState3(value);
+  const lastUpdatedAtRef = useRef5(0);
+  useEffect7(() => {
+    const now2 = Date.now();
+    const remaining = delay2 - (now2 - lastUpdatedAtRef.current);
+    if (remaining <= 0) {
+      lastUpdatedAtRef.current = now2;
+      setThrottledValue(value);
+      return;
+    }
+    const timer = setTimeout(() => {
+      lastUpdatedAtRef.current = Date.now();
+      setThrottledValue(value);
+    }, remaining);
+    return () => clearTimeout(timer);
+  }, [value, delay2]);
+  return throttledValue;
+}
+function useThrottleCallback(callback, delay2 = 500, options = {}) {
+  const { leading = true, trailing = true } = options;
+  const callbackRef = useRef5(callback);
+  const lastInvokedAtRef = useRef5(0);
+  const timerRef = useRef5(null);
+  const pendingArgsRef = useRef5(null);
+  useEffect7(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+  const clearTimer = useCallback2(() => {
+    if (timerRef.current !== null) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+  const invoke = useCallback2((args) => {
+    lastInvokedAtRef.current = Date.now();
+    pendingArgsRef.current = null;
+    callbackRef.current(...args);
+  }, []);
+  const throttled = useMemo(() => {
+    const scheduleTrailing = (wait) => {
+      if (timerRef.current !== null) return;
+      timerRef.current = setTimeout(() => {
+        timerRef.current = null;
+        const pending = pendingArgsRef.current;
+        if (pending) invoke(pending);
+      }, wait);
+    };
+    const fn = ((...args) => {
+      const now2 = Date.now();
+      const elapsed = now2 - lastInvokedAtRef.current;
+      const remaining = elapsed < 0 ? 0 : delay2 - elapsed;
+      if (remaining <= 0) {
+        clearTimer();
+        if (leading) {
+          invoke(args);
+          return;
+        }
+        lastInvokedAtRef.current = now2;
+        if (trailing) {
+          pendingArgsRef.current = args;
+          scheduleTrailing(delay2);
+        }
+        return;
+      }
+      if (trailing) {
+        pendingArgsRef.current = args;
+        scheduleTrailing(remaining);
+      }
+    });
+    fn.cancel = () => {
+      clearTimer();
+      pendingArgsRef.current = null;
+      lastInvokedAtRef.current = 0;
+    };
+    fn.flush = () => {
+      const pending = pendingArgsRef.current;
+      clearTimer();
+      if (pending) invoke(pending);
+    };
+    return fn;
+  }, [delay2, leading, trailing, clearTimer, invoke]);
+  useEffect7(() => {
+    return () => {
+      clearTimer();
+      pendingArgsRef.current = null;
+    };
+  }, [clearTimer]);
+  return throttled;
+}
+
+// src/hooks/useEscapeKey.ts
+import { useCallback as useCallback3 } from "react";
+
+// src/constants/EventTypes.ts
+var EventTypes = /* @__PURE__ */ ((EventTypes2) => {
+  EventTypes2["IDLE"] = "idle";
+  EventTypes2["CLICK"] = "click";
+  EventTypes2["MOUSE_UP"] = "mouseup";
+  EventTypes2["DBLCLICK"] = "dblclick";
+  EventTypes2["MOUSE_OUT"] = "mouseout";
+  EventTypes2["MOUSE_DOWN"] = "mousedown";
+  EventTypes2["MOUSE_MOVE"] = "mousemove";
+  EventTypes2["MOUSE_OVER"] = "mouseover";
+  EventTypes2["MOUSE_ENTER"] = "mouseenter";
+  EventTypes2["MOUSE_LEAVE"] = "mouseleave";
+  EventTypes2["CONTEXT_MENU"] = "contextmenu";
+  EventTypes2["KEY_UP"] = "keyup";
+  EventTypes2["ESCAPE"] = "Escape";
+  EventTypes2["KEY_DOWN"] = "keydown";
+  EventTypes2["KEY_PRESS"] = "keypress";
+  EventTypes2["ARROW_LEFT"] = "ArrowLeft";
+  EventTypes2["ARROW_RIGHT"] = "ArrowRight";
+  EventTypes2["BLUR"] = "blur";
+  EventTypes2["INPUT"] = "input";
+  EventTypes2["RESET"] = "reset";
+  EventTypes2["FOCUS"] = "focus";
+  EventTypes2["CHANGE"] = "change";
+  EventTypes2["SUBMIT"] = "submit";
+  EventTypes2["TOUCH_END"] = "touchend";
+  EventTypes2["TOUCH_MOVE"] = "touchmove";
+  EventTypes2["TOUCH_START"] = "touchstart";
+  EventTypes2["TOUCH_CANCEL"] = "touchcancel";
+  EventTypes2["POINTER_UP"] = "pointerup";
+  EventTypes2["POINTER_OUT"] = "pointerout";
+  EventTypes2["POINTER_DOWN"] = "pointerdown";
+  EventTypes2["POINTER_MOVE"] = "pointermove";
+  EventTypes2["POINTER_OVER"] = "pointerover";
+  EventTypes2["POINTER_ENTER"] = "pointerenter";
+  EventTypes2["POINTER_LEAVE"] = "pointerleave";
+  EventTypes2["POINTER_CANCEL"] = "pointercancel";
+  EventTypes2["DRAG"] = "drag";
+  EventTypes2["DROP"] = "drop";
+  EventTypes2["DRAG_END"] = "dragend";
+  EventTypes2["DRAG_OVER"] = "dragover";
+  EventTypes2["DRAG_START"] = "dragstart";
+  EventTypes2["DRAG_ENTER"] = "dragenter";
+  EventTypes2["DRAG_LEAVE"] = "dragleave";
+  EventTypes2["CUT"] = "cut";
+  EventTypes2["COPY"] = "copy";
+  EventTypes2["PASTE"] = "paste";
+  EventTypes2["PLAY"] = "play";
+  EventTypes2["PAUSE"] = "pause";
+  EventTypes2["ENDED"] = "ended";
+  EventTypes2["TIME_UPDATE"] = "timeupdate";
+  EventTypes2["VOLUME_CHANGE"] = "volumechange";
+  EventTypes2["LOADED_METADATA"] = "loadedmetadata";
+  EventTypes2["FOCUS_IN"] = "focusin";
+  EventTypes2["FOCUS_OUT"] = "focusout";
+  EventTypes2["VISIBILITY_CHANGE"] = "visibilitychange";
+  EventTypes2["WHEEL"] = "wheel";
+  EventTypes2["SCROLL"] = "scroll";
+  EventTypes2["LOAD"] = "load";
+  EventTypes2["ERROR"] = "error";
+  EventTypes2["RESIZE"] = "resize";
+  EventTypes2["UNLOAD"] = "unload";
+  EventTypes2["ONLINE"] = "online";
+  EventTypes2["OFFLINE"] = "offline";
+  EventTypes2["BEFORE_UNLOAD"] = "beforeunload";
+  return EventTypes2;
+})(EventTypes || {});
+var EventTypes_default = EventTypes;
+
+// src/hooks/useEventListener.ts
+import { useEffect as useEffect8 } from "react";
+function useEventListener(event, handler, element = window) {
+  useEffect8(() => {
+    element.addEventListener(event, handler);
+    return () => element.removeEventListener(event, handler);
+  }, [event, handler, element]);
+}
+
+// src/hooks/useEscapeKey.ts
+var useEscapeKey = ({
+  onEscape,
+  enabled = true,
+  preventDefault = false
+}) => {
+  const handler = useCallback3(
+    (event) => {
+      if (!enabled) return;
+      if (event.key === EventTypes_default.ESCAPE) {
+        if (preventDefault) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        onEscape();
+      }
+    },
+    [enabled, onEscape, preventDefault]
+  );
+  useEventListener("keydown", handler, document);
+};
+
+// src/hooks/useScrollLock.ts
+import { useEffect as useEffect9 } from "react";
+var useScrollLock = ({ isLocked }) => {
+  useEffect9(() => {
+    if (isLocked) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+    }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isLocked]);
+};
+
+// src/hooks/useMediaQuery.ts
+import { useState as useState4, useEffect as useEffect10 } from "react";
+function useMediaQuery(query, defaultValue = false) {
+  const [matches, setMatches] = useState4(() => {
+    if (isBrowser()) {
+      return defaultValue;
+    }
+    return window.matchMedia(query).matches;
+  });
+  useEffect10(() => {
+    if (isBrowser()) {
+      return;
+    }
+    const mediaQuery = window.matchMedia(query);
+    setMatches(mediaQuery.matches);
+    const handleChange = (event) => {
+      setMatches(event.matches);
+    };
+    mediaQuery.addEventListener("change", handleChange);
+    return () => {
+      mediaQuery.removeEventListener("change", handleChange);
+    };
+  }, [query]);
+  return matches;
+}
+
+// src/hooks/useWindowSize.ts
+import { useState as useState5, useEffect as useEffect11 } from "react";
+function useWindowSize() {
+  const [windowSize, setWindowSize] = useState5({
+    width: isBrowser() ? window.innerWidth : 0,
+    height: isBrowser() ? window.innerHeight : 0
+  });
+  useEffect11(() => {
+    if (isBrowser()) return;
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+  return windowSize;
+}
+
+// src/hooks/useDownloadFile.ts
+var useDownloadFile = ({
+  errorMessage = "Endirm\u0259 u\u011Fursuz oldu."
+}) => {
+  const downloadImage = async (src, filename) => {
+    try {
+      const response = await fetch(src);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${filename.replace(/\s+/g, "_")}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert(errorMessage);
+    }
+  };
+  return { downloadImage };
+};
+
+// src/hooks/useOnlineStatus.ts
+import { useSyncExternalStore } from "react";
+function useOnlineStatus() {
+  const isOnline = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot
+  );
+  return isOnline;
+}
+function getSnapshot() {
+  return navigator.onLine;
+}
+function getServerSnapshot() {
+  return true;
+}
+function subscribe(callback) {
+  window.addEventListener("online", callback);
+  window.addEventListener("offline", callback);
+  return () => {
+    window.removeEventListener("online", callback);
+    window.removeEventListener("offline", callback);
+  };
+}
+
+// src/hooks/useOutsideClick.ts
+import { useCallback as useCallback4 } from "react";
+function useOutsideClick(ref, onClickOutside) {
+  const handler = useCallback4(
+    (event) => {
+      if (!ref.current) return;
+      if (!ref.current.contains(event.target)) {
+        onClickOutside?.();
+      }
+    },
+    [ref, onClickOutside]
+  );
+  useEventListener("mousedown", handler, document);
+}
+
+// src/hooks/useBeforeUnload.ts
+import { useEffect as useEffect12 } from "react";
+
+// src/hooks/useUpdateEffect.ts
+import { useEffect as useEffect13, useRef as useRef6 } from "react";
+function useUpdateEffect(effect, deps) {
+  const isFirstRender = useRef6(true);
+  useEffect13(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    return effect();
+  }, deps);
+}
+
+// src/hooks/useResizeListener.ts
+import { useEffect as useEffect14 } from "react";
+var useResizeListener = (callback, active) => {
+  useEffect14(() => {
+    if (active) {
+      callback();
+      window.addEventListener(EventTypes_default.RESIZE, callback);
+    }
+    return () => {
+      window.removeEventListener(EventTypes_default.RESIZE, callback);
+    };
+  }, [active, callback]);
+};
+
+// src/hooks/useCopyToClipboard.ts
+import { useState as useState6 } from "react";
+
+// src/hooks/useScrollThreshold.ts
+import { useState as useState7, useEffect as useEffect15 } from "react";
+var useScrollThreshold = (threshold = 300) => {
+  const [isReached, setIsReached] = useState7(false);
+  useEffect15(() => {
+    const handleScroll = (e) => {
+      const target = e.target;
+      if (target.scrollTop > threshold) {
+        setIsReached(true);
+      }
+    };
+    document.addEventListener("scroll", handleScroll, { capture: true, passive: true });
+    return () => document.removeEventListener("scroll", handleScroll, { capture: true });
+  }, [threshold]);
+  return isReached;
+};
 export {
   CookieManager,
   DateFormats,
@@ -1738,6 +2128,7 @@ export {
   SearchMode,
   addAsteriskIf,
   addToDate,
+  advancedSearch,
   animate,
   areAllValuesComplete,
   average,
@@ -1789,6 +2180,7 @@ export {
   get,
   getAge,
   getDateDifference,
+  getDaysDiffAsText,
   getEndpoint,
   getImageUrl,
   getInitials,
@@ -1820,6 +2212,7 @@ export {
   last,
   lastSeveral,
   lazyLoad,
+  levenshteinDistance,
   local,
   mapKeys,
   mapValues,
@@ -1829,6 +2222,7 @@ export {
   min,
   negate,
   noop,
+  normalizeAzText,
   normalizePhone,
   normalizeWhitespace,
   now,
@@ -1890,7 +2284,6 @@ export {
   useEscapeKey,
   useEventListener,
   useInterval,
-  useKeyPress,
   useMediaQuery,
   useMount,
   useOnlineStatus,
@@ -1900,6 +2293,9 @@ export {
   usePrint,
   useResizeListener,
   useScrollLock,
+  useScrollThreshold,
+  useThrottle,
+  useThrottleCallback,
   useToggle,
   useUnmount,
   useUpdateEffect,

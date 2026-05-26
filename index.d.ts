@@ -193,6 +193,9 @@ interface SearchableOption {
     value: string;
     children?: SearchableOption[];
 }
+declare const advancedSearch: <T extends SearchableOption>(options: T[], searchTerm: string, mode?: SearchMode) => T[];
+
+declare const levenshteinDistance: (a: string, b: string) => number;
 
 interface PrintStyle {
     padding?: string;
@@ -227,6 +230,119 @@ declare function useDebounce<T>(value: T, delay?: number): T;
 declare function usePrevious<T>(value: T): T | undefined;
 
 declare function useInterval(callback: () => void, delay: number | null): void;
+
+/**
+ * Options to configure throttle edge behavior.
+ *
+ * - `leading`  → invoke on the first call of a cycle (immediately).
+ * - `trailing` → invoke once more at the end of a cycle with the latest args.
+ *
+ * Setting both to `false` produces a no-op throttle.
+ */
+interface ThrottleOptions {
+    /**
+     * Invoke on the leading edge of the timeout window.
+     * @default true
+     */
+    leading?: boolean;
+    /**
+     * Invoke on the trailing edge of the timeout window with the most recent args.
+     * @default true
+     */
+    trailing?: boolean;
+}
+/**
+ * A function wrapped with throttle semantics, returned by {@link useThrottleCallback}.
+ *
+ * The wrapped callback's return value is discarded — throttled functions are fire-and-forget.
+ *
+ * @template TArgs Tuple of argument types accepted by the wrapped callback.
+ */
+interface ThrottledFunction<TArgs extends readonly unknown[]> {
+    /** Invoke the throttled function. Honors the configured throttle policy. */
+    (...args: TArgs): void;
+    /** Drop any pending trailing invocation and reset the throttle window. */
+    cancel: () => void;
+    /** Immediately invoke the pending trailing call (if any) and reset the throttle window. */
+    flush: () => void;
+}
+/**
+ * Throttle a value: returns a copy of `value` that updates at most once per `delay` ms.
+ *
+ * Ideal for high-frequency value changes (scroll position, mouse coordinates, search input)
+ * where rendering on every change would be wasteful.
+ *
+ * SSR-safe — all timer work happens inside `useEffect`, so the hook is safe under
+ * Next.js (App & Pages router), Remix, and other server-rendered environments.
+ *
+ * @template T Type of the throttled value.
+ * @param value The current value (may change on every render).
+ * @param delay Minimum interval between updates of the returned value, in milliseconds.
+ *              Defaults to `500`. Values `<= 0` effectively disable throttling.
+ * @returns The throttled value.
+ *
+ * @example
+ * ```tsx
+ * const [query, setQuery] = useState('');
+ * const throttledQuery = useThrottle(query, 300);
+ *
+ * useEffect(() => {
+ *   if (throttledQuery) fetchResults(throttledQuery);
+ * }, [throttledQuery]);
+ * ```
+ */
+declare function useThrottle<T>(value: T, delay?: number): T;
+/**
+ * Throttle a callback: returns a function that, however frequently called, invokes
+ * the wrapped callback at most once per `delay` ms.
+ *
+ * The returned function:
+ * - has a **stable identity** across renders as long as `delay`/`leading`/`trailing`
+ *   don't change — safe to pass to `useEffect` deps or memoized children.
+ * - always calls the **latest** version of `callback` (no stale closures, even if
+ *   `callback` is recreated on every render).
+ * - exposes `.cancel()` to drop a pending trailing invocation.
+ * - exposes `.flush()` to immediately invoke a pending trailing invocation.
+ *
+ * Automatically cancels pending invocations on unmount.
+ *
+ * SSR-safe — nothing executes at module load or render time; timers only start
+ * once the throttled function is actually invoked.
+ *
+ * @template TArgs Tuple of argument types accepted by `callback`.
+ * @param callback The function to throttle. Its return value is discarded.
+ * @param delay Minimum interval between invocations, in milliseconds. Defaults to `500`.
+ * @param options Edge configuration. Defaults to `{ leading: true, trailing: true }`.
+ * @returns A throttled wrapper with `.cancel()` and `.flush()` helpers.
+ *
+ * @example
+ * ```tsx
+ * // Next.js: rate-limit a resize handler
+ * const onWidthChange = useThrottleCallback((width: number) => {
+ *   setBreakpoint(width < 768 ? 'mobile' : 'desktop');
+ * }, 200);
+ *
+ * useEffect(() => {
+ *   const handle = () => onWidthChange(window.innerWidth);
+ *   window.addEventListener('resize', handle);
+ *   return () => {
+ *     window.removeEventListener('resize', handle);
+ *     onWidthChange.cancel();
+ *   };
+ * }, [onWidthChange]);
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Trailing-only: fire after the user stops scrolling
+ * const onScroll = useThrottleCallback(
+ *   (y: number) => analytics.track('scroll', { y }),
+ *   500,
+ *   { leading: false, trailing: true },
+ * );
+ * ```
+ */
+declare function useThrottleCallback<TArgs extends readonly unknown[]>(callback: (...args: TArgs) => unknown, delay?: number, options?: ThrottleOptions): ThrottledFunction<TArgs>;
 
 interface UseEscapeKeyProps {
     enabled?: boolean;
@@ -264,7 +380,7 @@ declare function useEventListener<K extends keyof WindowEventMap>(event: K, hand
 
 declare const useResizeListener: (callback: () => void, active: boolean) => void;
 
-declare function useKeyPress(targetKey: string): boolean;
+declare const useScrollThreshold: (threshold?: number) => boolean;
 
 declare const isBrowser: () => boolean;
 declare const safeWindow: () => (Window & typeof globalThis) | undefined;
@@ -316,6 +432,42 @@ declare enum DateFormats {
 }
 
 type DateInput = Date | string | number | null | undefined;
+type FormatLang = "az" | "en" | "ru";
+type DaysFormatOrder = 'YMD' | 'DMY' | 'MDY';
+type PluralLabel = {
+    one: string;
+    other?: string;
+    few?: string;
+    many?: string;
+};
+interface GenerateOrderedDateTextModel {
+    lang: FormatLang;
+    order: DaysFormatOrder;
+    date: {
+        days: number;
+        years: number;
+        months: number;
+    };
+}
+interface DaysToYMDDaysOptionsModel {
+    asText?: boolean;
+    lang?: FormatLang;
+    order?: DaysFormatOrder;
+}
+interface DaysToYMDParams {
+    endDate: DateInput;
+    startDate: DateInput;
+    options?: DaysToYMDDaysOptionsModel;
+}
+interface ComputeAnchorParams {
+    startDate: Date;
+    totalMonths: number;
+}
+interface DaysToYMDOutputModel {
+    dayCount: number;
+    yearCount: number;
+    monthCount: number;
+}
 declare const formatDate: (date: DateInput, format?: DateFormats | string) => string | undefined;
 declare const formatRelativeTime: (date: DateInput, baseDate?: DateInput) => string | undefined;
 declare const isValidDate: (date: DateInput) => boolean;
@@ -338,6 +490,51 @@ declare const toISOString: (date: DateInput) => string | undefined;
 declare const toUnixTimestamp: (date: DateInput) => number | undefined;
 declare const now: () => Date;
 declare const compareDates: (date1: DateInput, date2: DateInput) => -1 | 0 | 1 | undefined;
+/**
+ * Calculates the difference between two dates broken down into years, months, and days.
+ *
+ * By default returns a localized human-readable string (e.g. `"1 il 3 ay 9 gün"`).
+ * Pass `options.asText: false` to receive a structured object instead.
+ *
+ * @param startDate - The earlier date. Accepts `Date`, ISO string, or Unix timestamp (ms).
+ * @param endDate - The later date. Must be greater than or equal to `startDate`.
+ * @param options - Optional formatting options.
+ *   - `asText` (default `true`): if `true`, returns a formatted string; if `false`, returns `DaysToYMDOutputModel`.
+ *   - `lang` (default `'az'`): output language — `'az'`, `'en'`, or `'ru'`.
+ *   - `order` (default `'YMD'`): component order — `'YMD'`, `'DMY'`, or `'MDY'`.
+ *
+ * @returns A formatted string when `asText` is true, otherwise `{ yearCount, monthCount, dayCount }`.
+ *
+ * @throws {Error} If either `startDate` or `endDate` is invalid / unparseable.
+ * @throws {Error} If `endDate` is earlier than `startDate`.
+ *
+ * @example
+ * // Default usage — Azerbaijani text
+ * getDaysDiffAsText({
+ *   startDate: '2026-03-01',
+ *   endDate: '2027-06-10',
+ * });
+ * // → "1 il 3 ay 9 gün"
+ *
+ * @example
+ * // English output, day-month-year order
+ * getDaysDiffAsText({
+ *   startDate: new Date('2026-03-01'),
+ *   endDate: new Date('2027-06-10'),
+ *   options: { lang: 'en', order: 'DMY' },
+ * });
+ * // → "9 days 3 months 1 year"
+ *
+ * @example
+ * // Structured output instead of string
+ * getDaysDiffAsText({
+ *   startDate: '2026-01-01',
+ *   endDate: '2027-01-01',
+ *   options: { asText: false },
+ * });
+ * // → { yearCount: 1, monthCount: 0, dayCount: 0 }
+ */
+declare function getDaysDiffAsText({ options, endDate, startDate, }: DaysToYMDParams): DaysToYMDOutputModel | string;
 
 /** Checks if a phone number already starts with Azerbaijan country code (+994 or 994) */
 declare const hasAzerbaijanCountryCode: (phoneNumber: string | number) => boolean;
@@ -979,6 +1176,7 @@ declare const repeat: (str: string, count: number) => string;
  */
 declare const slugify: (str: string) => string;
 declare function getInitials(name: string, limit?: number): string;
+declare const normalizeAzText: (text: string) => string;
 
 /**
  * Converts a File or Blob object to a Base64-encoded data URL string.
@@ -1254,4 +1452,4 @@ declare const bounceIn: (order?: number, className?: string, style?: CSSProperti
     style: CSSProperties;
 };
 
-export { type ClassValue, CookieManager, DateFormats, type DateInput, FormDataBuilder, type PrintStyle, SearchMode, type SearchableOption, addAsteriskIf, addToDate, animate, areAllValuesComplete, average, bounceIn, capitalize, capitalizeWords, checkArrEquality, chunk, cleanObject, clone, cn, compactArr, compactStr, compareDates, compose, concatIf, constant, convertBase64ToFile, convertFileToBase64, count, countOccurrences, createFormData, createStorage, curry, debounce, deepClone, deepFreeze, deepMerge, delay, difference, endOf, endsWith, entries, eqIgnoreCase, extractBase64FromDataUrl, fadeIn, fileToArrayBuffer, filterObject, first, firstSeveral, flatten, flattenDeep, flip, formatDate, formatDateRange, formatRelativeTime, fromPairs, generateQuery, get, getAge, getDateDifference, getEndpoint, getImageUrl, getInitials, groupBy, has, hasAzerbaijanCountryCode, identity, includesIgnoreCase, intersection, invert, isBetweenDates, isBrowser, isEmpty, isEqual, isFuture, isLoggedIn, isNotEmpty, isNulOrUndefined, isObject, isPast, isSameDay, isString, isStringSimilar, isToday, isTomorrow, isValidDate, isYesterday, keys, last, lastSeveral, lazyLoad, local, mapKeys, mapValues, max, memoize, merge, min, negate, noop, normalizePhone, normalizeWhitespace, now, omit, once, padEnd, padStart, parseDate, partial, partition, pick, pushIf, rateLimit, reject, repeat, retry, reverse, reverseArr, safeCall, safeWindow, sample, sampleSize, scaleIn, session, set, shuffle, slideInDown, slideInLeft, slideInRight, slideInUp, slugify, sortBy, startOf, startsWith, subtractFromDate, sum, throttle, timeId, tinyId, toCamelCase, toISOString, toKebabCase, toPascalCase, toSnakeCase, toUnixTimestamp, toUpperSnakeCase, trim, trimEnd, trimStart, truncate, tryCatch, tryCatchAsync, unflatten, union, unique, uniqueBy, useDebounce, useDownloadFile, useEscapeKey, useEventListener, useInterval, useKeyPress, useMediaQuery, useMount, useOnlineStatus, useOutsideClick, usePortal, usePrevious, usePrint, useResizeListener, useScrollLock, useToggle, useUnmount, useUpdateEffect, useWindowSize, values, withAzerbaijanCountryCode, without, zip };
+export { type ClassValue, type ComputeAnchorParams, CookieManager, DateFormats, type DateInput, type DaysFormatOrder, type DaysToYMDDaysOptionsModel, type DaysToYMDOutputModel, type DaysToYMDParams, FormDataBuilder, type FormatLang, type GenerateOrderedDateTextModel, type PluralLabel, type PrintStyle, SearchMode, type SearchableOption, type ThrottleOptions, type ThrottledFunction, addAsteriskIf, addToDate, advancedSearch, animate, areAllValuesComplete, average, bounceIn, capitalize, capitalizeWords, checkArrEquality, chunk, cleanObject, clone, cn, compactArr, compactStr, compareDates, compose, concatIf, constant, convertBase64ToFile, convertFileToBase64, count, countOccurrences, createFormData, createStorage, curry, debounce, deepClone, deepFreeze, deepMerge, delay, difference, endOf, endsWith, entries, eqIgnoreCase, extractBase64FromDataUrl, fadeIn, fileToArrayBuffer, filterObject, first, firstSeveral, flatten, flattenDeep, flip, formatDate, formatDateRange, formatRelativeTime, fromPairs, generateQuery, get, getAge, getDateDifference, getDaysDiffAsText, getEndpoint, getImageUrl, getInitials, groupBy, has, hasAzerbaijanCountryCode, identity, includesIgnoreCase, intersection, invert, isBetweenDates, isBrowser, isEmpty, isEqual, isFuture, isLoggedIn, isNotEmpty, isNulOrUndefined, isObject, isPast, isSameDay, isString, isStringSimilar, isToday, isTomorrow, isValidDate, isYesterday, keys, last, lastSeveral, lazyLoad, levenshteinDistance, local, mapKeys, mapValues, max, memoize, merge, min, negate, noop, normalizeAzText, normalizePhone, normalizeWhitespace, now, omit, once, padEnd, padStart, parseDate, partial, partition, pick, pushIf, rateLimit, reject, repeat, retry, reverse, reverseArr, safeCall, safeWindow, sample, sampleSize, scaleIn, session, set, shuffle, slideInDown, slideInLeft, slideInRight, slideInUp, slugify, sortBy, startOf, startsWith, subtractFromDate, sum, throttle, timeId, tinyId, toCamelCase, toISOString, toKebabCase, toPascalCase, toSnakeCase, toUnixTimestamp, toUpperSnakeCase, trim, trimEnd, trimStart, truncate, tryCatch, tryCatchAsync, unflatten, union, unique, uniqueBy, useDebounce, useDownloadFile, useEscapeKey, useEventListener, useInterval, useMediaQuery, useMount, useOnlineStatus, useOutsideClick, usePortal, usePrevious, usePrint, useResizeListener, useScrollLock, useScrollThreshold, useThrottle, useThrottleCallback, useToggle, useUnmount, useUpdateEffect, useWindowSize, values, withAzerbaijanCountryCode, without, zip };
